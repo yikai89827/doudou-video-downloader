@@ -1,0 +1,68 @@
+{
+  "name": "doudou-video-downloader",
+  "version": "1.0.0",
+  "description": "豆豆万能视频下载器 - 多平台视频下载管理工具",
+  "main": "out/main/main.js",
+  "author": "doudou-video-downloader",
+  "license": "Unlicense",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "generate-icons": "node scripts/generate-icons.js",
+    "download-binaries": "node scripts/download-binaries.js",
+    "dist": "npm run download-binaries && npm run build && electron-builder --win",
+    "dist:dir": "npm run download-binaries && npm run build && electron-builder --win --dir"
+  },
+  "dependencies": {
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "electron": "^36.5.0",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^3.1.0",
+    "png-to-ico": "^2.1.8",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  },
+  "build": {
+    "appId": "com.doudou.video-downloader",
+    "productName": "豆豆万能视频下载器",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "resources/icon.png",
+      "resources/icon.ico"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/bin",
+        "to": "bin",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "resources/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "豆豆万能视频下载器"
+    }
+  }
+}
