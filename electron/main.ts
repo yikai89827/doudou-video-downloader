@@ -1,9 +1,11 @@
-import { app, BrowserWindow, ipcMain, nativeImage, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, shell } from 'electron'
 import { join } from 'path'
 import { recordStore } from './services/record-store'
 import { fetchVideoInfo } from './services/ytdlp'
 import { downloadManager } from './services/download-manager'
 import { getDownloadsDir } from './services/paths'
+import { loadSettings, saveSettings } from './services/settings'
+import { getYtDlpBackend } from './services/ytdlp-backend'
 import { registerMediaScheme, setupMediaProtocol } from './protocol/media'
 import { APP_NAME } from './constants'
 import type { RecordQuery } from '../src/types'
@@ -89,6 +91,27 @@ export function registerIpc(): void {
 
   ipcMain.handle('app:downloads-dir', () => {
     return getDownloadsDir()
+  })
+
+  ipcMain.handle('settings:get', () => loadSettings())
+
+  ipcMain.handle('settings:set-cookies', (_e, cookiesPath: string) => {
+    return saveSettings({ cookiesPath })
+  })
+
+  ipcMain.handle('settings:select-cookies', async () => {
+    const result = await dialog.showOpenDialog(mainWindow!, {
+      title: '选择 cookies.txt',
+      filters: [{ name: 'Cookies', extensions: ['txt'] }],
+      properties: ['openFile']
+    })
+    if (result.canceled || !result.filePaths[0]) return null
+    return saveSettings({ cookiesPath: result.filePaths[0] }).cookiesPath
+  })
+
+  ipcMain.handle('ytdlp:backend', () => {
+    const b = getYtDlpBackend()
+    return { label: b.label, hasImpersonate: b.hasImpersonate }
   })
 }
 

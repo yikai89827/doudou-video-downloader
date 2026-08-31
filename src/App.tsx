@@ -5,6 +5,7 @@ import FilterBar from './components/FilterBar'
 import RecordGrid from './components/RecordGrid'
 import VideoPlayer from './components/VideoPlayer'
 import AboutModal from './components/AboutModal'
+import SettingsModal from './components/SettingsModal'
 import { useRecords } from './hooks/useRecords'
 import { useDownloadTasks } from './hooks/useDownloadTasks'
 import { APP_NAME, APP_DESCRIPTION } from './constants/app'
@@ -20,6 +21,7 @@ export default function App() {
   const { tasks, pause, resume, cancel } = useDownloadTasks()
   const [playing, setPlaying] = useState<DownloadRecord | null>(null)
   const [showAbout, setShowAbout] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   const handleDelete = async (id: string) => {
     await window.api.deleteRecord(id)
@@ -52,6 +54,9 @@ export default function App() {
             <span className="header-badge downloading">{activeTaskCount} 个任务进行中</span>
           )}
           <span className="header-stats">共 {records.length} 条记录</span>
+          <button className="header-btn" onClick={() => setShowSettings(true)} title="下载设置">
+            设置
+          </button>
           <button className="header-btn" onClick={() => setShowAbout(true)} title="关于与开源许可">
             关于
           </button>
@@ -79,6 +84,7 @@ export default function App() {
       </div>
 
       <AboutModal open={showAbout} onClose={() => setShowAbout(false)} />
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   )
 }

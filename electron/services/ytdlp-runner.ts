@@ -1,6 +1,7 @@
 import { ChildProcess, spawn } from 'child_process'
 import { existsSync } from 'fs'
-import { resolveFfmpegDir, resolveYtDlpPath } from './paths'
+import { resolveFfmpegDir } from './paths'
+import { getYtDlpBackend } from './ytdlp-backend'
 
 export class DownloadPausedError extends Error {
   constructor() {
@@ -36,7 +37,7 @@ export interface SpawnYtDlpHandle {
 }
 
 export function spawnYtDlp({ args, onLine }: SpawnYtDlpOptions): SpawnYtDlpHandle {
-  const ytdlp = resolveYtDlpPath()
+  const backend = getYtDlpBackend()
   const ffmpegDir = resolveFfmpegDir()
   const env = {
     ...process.env,
@@ -47,8 +48,9 @@ export function spawnYtDlp({ args, onLine }: SpawnYtDlpOptions): SpawnYtDlpHandl
     env.PATH = `${ffmpegDir}${process.platform === 'win32' ? ';' : ':'}${env.PATH || ''}`
   }
 
+  const fullArgs = ['--encoding', 'utf-8', ...backend.prefixArgs, ...args]
   let reason: 'pause' | 'cancel' | null = null
-  const proc = spawn(ytdlp, ['--encoding', 'utf-8', ...args], { env, windowsHide: true })
+  const proc = spawn(backend.command, fullArgs, { env, windowsHide: true })
   let stdout = ''
   let stderr = ''
 

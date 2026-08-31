@@ -66,6 +66,15 @@ export interface DownloadProgress {
   message?: string
 }
 
+export interface AppSettings {
+  cookiesPath: string
+}
+
+export interface YtDlpBackendInfo {
+  label: string
+  hasImpersonate: boolean
+}
+
 export interface ElectronAPI {
   getRecords: (query: RecordQuery) => Promise<DownloadRecord[]>
   getPlatforms: () => Promise<string[]>
@@ -78,6 +87,10 @@ export interface ElectronAPI {
   deleteRecord: (id: string) => Promise<void>
   openFileLocation: (filePath: string) => Promise<void>
   getDownloadsDir: () => Promise<string>
+  getSettings: () => Promise<AppSettings>
+  setCookiesPath: (path: string) => Promise<AppSettings>
+  selectCookiesFile: () => Promise<string | null>
+  getYtDlpBackend: () => Promise<YtDlpBackendInfo>
   onDownloadProgress: (callback: (progress: DownloadProgress) => void) => () => void
   onDownloadTasks: (callback: (tasks: DownloadTask[]) => void) => () => void
 }

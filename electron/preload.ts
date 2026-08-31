@@ -13,6 +13,10 @@ const api: ElectronAPI = {
   deleteRecord: (id) => ipcRenderer.invoke('records:delete', id),
   openFileLocation: (filePath) => ipcRenderer.invoke('file:reveal', filePath),
   getDownloadsDir: () => ipcRenderer.invoke('app:downloads-dir'),
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  setCookiesPath: (path) => ipcRenderer.invoke('settings:set-cookies', path),
+  selectCookiesFile: () => ipcRenderer.invoke('settings:select-cookies'),
+  getYtDlpBackend: () => ipcRenderer.invoke('ytdlp:backend'),
   onDownloadProgress: (callback) => {
     const handler = (_: unknown, progress: DownloadProgress) => callback(progress)
     ipcRenderer.on('download-progress', handler)

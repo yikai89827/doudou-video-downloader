@@ -4,6 +4,7 @@ release/
 dist/
 *.log
 
-# 二进制由 scripts/download-binaries.js 下载，不提交到仓库
+# 二进制由 scripts 下载，不提交到仓库
 resources/bin/*.exe
 resources/bin/*.zip
+resources/python-venv/

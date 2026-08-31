@@ -1,9 +1,11 @@
 import type { VideoInfo } from '../../src/types'
 import { getPlatformLabel } from './paths'
+import { buildYtDlpExtraArgs } from './ytdlp-args'
 import { runYtDlp } from './ytdlp-runner'
 
 export async function fetchVideoInfo(url: string): Promise<VideoInfo> {
-  const output = await runYtDlp(['--no-download', '--no-warnings', '-j', '--no-playlist', url])
+  const extraArgs = buildYtDlpExtraArgs(url)
+  const output = await runYtDlp([...extraArgs, '--no-download', '--no-warnings', '-j', '--no-playlist', url])
   const line = output.trim().split('\n').find((l) => l.startsWith('{'))
   if (!line) throw new Error('无法解析视频信息')
 

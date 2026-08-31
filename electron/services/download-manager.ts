@@ -5,6 +5,7 @@ import { BrowserWindow } from 'electron'
 import type { DownloadRecord, DownloadTask } from '../../src/types'
 import { recordStore } from './record-store'
 import { getDownloadsDir, getPlatformLabel } from './paths'
+import { buildYtDlpExtraArgs, getPlatformHint } from './ytdlp-args'
 import {
   DownloadCancelledError,
   DownloadPausedError,
@@ -97,6 +98,7 @@ export class DownloadManager {
       const url = raw.trim()
       if (!url || !/^https?:\/\//i.test(url)) continue
 
+      const hint = getPlatformHint(url)
       const id = uuidv4()
       const task: DownloadTask = {
         id,
@@ -112,6 +114,13 @@ export class DownloadManager {
       this.tasks.set(id, task)
       this.queue.push(id)
       ids.push(id)
+
+      if (hint) {
+        this.updateTask(id, { status: 'failed', error: hint, title: '配置缺失' })
+        this.removeFromQueue(id)
+        continue
+      }
+
       void this.fetchTaskInfo(id)
     }
 
@@ -125,7 +134,8 @@ export class DownloadManager {
     if (!task || task.status === 'cancelled') return
 
     try {
-      const output = await runYtDlp(['--no-download', '--no-warnings', '-j', '--no-playlist', task.url])
+      const extraArgs = buildYtDlpExtraArgs(task.url)
+      const output = await runYtDlp([...extraArgs, '--no-download', '--no-warnings', '-j', '--no-playlist', task.url])
       const line = output.trim().split('\n').find((l) => l.startsWith('{'))
       if (!line) throw new Error('无法解析视频信息')
 
@@ -257,7 +267,9 @@ export class DownloadManager {
 
     const outputTemplate = join(downloadsDir, `${id}.%(ext)s`)
     const canContinue = hasPartialFiles(downloadsDir, id)
+    const extraArgs = buildYtDlpExtraArgs(task.url)
     const args = [
+      ...extraArgs,
       '-f', 'bestvideo+bestaudio/best',
       '--merge-output-format', 'mp4',
       '--write-thumbnail',

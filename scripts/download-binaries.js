@@ -1,15 +1,16 @@
 /**
  * 下载 yt-dlp.exe 和 ffmpeg 到 resources/bin，用于打包分发
  */
-const { mkdirSync, existsSync, createWriteStream, copyFileSync } = require('fs')
+const { mkdirSync, existsSync, createWriteStream, copyFileSync, readdirSync } = require('fs')
 const { join } = require('path')
 const https = require('https')
 const http = require('http')
+const { execSync } = require('child_process')
 
 const BIN_DIR = join(__dirname, '..', 'resources', 'bin')
 
 const YTDLP_URL = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe'
-const FFMPEG_URL = 'https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip'
+const FFMPEG_ZIP_URL = 'https://github.com/GyanD/codexffmpeg/releases/download/9.0.1/ffmpeg-9.0.1-full_build.zip'
 
 function download(url, dest) {
   return new Promise((resolve, reject) => {
@@ -39,7 +40,6 @@ function download(url, dest) {
 }
 
 async function tryCopyFromSystem() {
-  const { execSync } = require('child_process')
   const ytdlpDest = join(BIN_DIR, 'yt-dlp.exe')
   const ffmpegDest = join(BIN_DIR, 'ffmpeg.exe')
 
@@ -68,6 +68,31 @@ async function tryCopyFromSystem() {
   }
 }
 
+async function downloadFfmpegZip() {
+  const ffmpegDest = join(BIN_DIR, 'ffmpeg.exe')
+  if (existsSync(ffmpegDest)) return
+
+  const zipPath = join(BIN_DIR, 'ffmpeg.zip')
+  const extractDir = join(BIN_DIR, 'ffmpeg-extract')
+
+  console.log('Downloading FFmpeg zip...')
+  await download(FFMPEG_ZIP_URL, zipPath)
+  console.log('Extracting FFmpeg...')
+  mkdirSync(extractDir, { recursive: true })
+  execSync(
+    `powershell -NoProfile -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${extractDir}' -Force"`,
+    { stdio: 'inherit' }
+  )
+
+  const extracted = readdirSync(extractDir).find((name) => name.startsWith('ffmpeg-'))
+  if (!extracted) throw new Error('FFmpeg extract folder not found')
+
+  const binDir = join(extractDir, extracted, 'bin')
+  copyFileSync(join(binDir, 'ffmpeg.exe'), join(BIN_DIR, 'ffmpeg.exe'))
+  copyFileSync(join(binDir, 'ffprobe.exe'), join(BIN_DIR, 'ffprobe.exe'))
+  console.log('ffmpeg.exe ready (downloaded)')
+}
+
 async function main() {
   mkdirSync(BIN_DIR, { recursive: true })
 
@@ -84,9 +109,7 @@ async function main() {
 
   const ffmpegDest = join(BIN_DIR, 'ffmpeg.exe')
   if (!existsSync(ffmpegDest)) {
-    console.log('ffmpeg.exe not found locally.')
-    console.log('Please install FFmpeg (winget install Gyan.FFmpeg) and re-run this script,')
-    console.log('or manually copy ffmpeg.exe and ffprobe.exe to resources/bin/')
+    await downloadFfmpegZip()
   } else {
     console.log('ffmpeg.exe ready')
   }

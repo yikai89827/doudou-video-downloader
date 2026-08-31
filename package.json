@@ -10,8 +10,9 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "generate-icons": "node scripts/generate-icons.js",
+    "setup-ytdlp-python": "node scripts/setup-ytdlp-python.js",
     "download-binaries": "node scripts/download-binaries.js",
-    "dist": "npm run download-binaries && npm run build && electron-builder --win",
+    "dist": "npm run download-binaries && npm run setup-ytdlp-python && npm run build && electron-builder --win",
     "dist:dir": "npm run download-binaries && npm run build && electron-builder --win --dir"
   },
   "dependencies": {
@@ -46,6 +47,11 @@
       {
         "from": "resources/bin",
         "to": "bin",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "resources/python-venv",
+        "to": "python-venv",
         "filter": ["**/*"]
       }
     ],
