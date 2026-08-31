@@ -1,6 +1,6 @@
 # 豆豆万能视频下载器
 
-基于 [yt-dlp](https://github.com/yt-dlp/yt-dlp) 的 Windows 桌面视频下载管理工具。
+基于 [yt-dlp](https://github.com/yt-dlp/yt-dlp) 的 Windows 桌面多平台视频下载（YouTube、Bilibili、抖音、TikTok 等）管理工具。
 
 ## 功能
 
