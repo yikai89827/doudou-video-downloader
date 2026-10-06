@@ -48,7 +48,9 @@ export function spawnYtDlp({ args, onLine }: SpawnYtDlpOptions): SpawnYtDlpHandl
     env.PATH = `${ffmpegDir}${process.platform === 'win32' ? ';' : ':'}${env.PATH || ''}`
   }
 
-  const fullArgs = ['--encoding', 'utf-8', ...backend.prefixArgs, ...args]
+  // yt-dlp options must come AFTER the backend prefix (e.g. `python -m yt_dlp`),
+  // otherwise Python parses them itself and fails with "Unknown option"
+  const fullArgs = [...backend.prefixArgs, '--encoding', 'utf-8', ...args]
   let reason: 'pause' | 'cancel' | null = null
   const proc = spawn(backend.command, fullArgs, { env, windowsHide: true })
   let stdout = ''

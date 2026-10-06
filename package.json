@@ -1,6 +1,6 @@
 {
   "name": "doudou-video-downloader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "豆豆万能视频下载器 - 多平台视频下载管理工具",
   "main": "out/main/main.js",
   "author": "doudou-video-downloader",
