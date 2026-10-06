@@ -79,3 +79,18 @@ export function getYtDlpBackend(): YtDlpBackend {
 export function resetYtDlpBackendCache(): void {
   cachedBackend = null
 }
+
+/** 抖音/快手/视频号等平台的 extractor 是否可用 */
+export function hasDouyinExtractor(): boolean {
+  try {
+    const result = spawnSync(getYtDlpBackend().command, [...getYtDlpBackend().prefixArgs, '--list-extractors'], {
+      encoding: 'utf-8',
+      windowsHide: true,
+      timeout: 20000
+    })
+    const output = `${result.stdout || ''}\n${result.stderr || ''}`
+    return /^(Douyin|Kuaishou|WeixinChannels)$/m.test(output)
+  } catch {
+    return false
+  }
+}

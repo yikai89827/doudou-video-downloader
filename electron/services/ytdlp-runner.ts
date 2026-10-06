@@ -1,6 +1,6 @@
 import { ChildProcess, spawn } from 'child_process'
 import { existsSync } from 'fs'
-import { resolveFfmpegDir } from './paths'
+import { resolveFfmpegDir, resolvePluginDir } from './paths'
 import { getYtDlpBackend } from './ytdlp-backend'
 
 export class DownloadPausedError extends Error {
@@ -39,7 +39,7 @@ export interface SpawnYtDlpHandle {
 export function spawnYtDlp({ args, onLine }: SpawnYtDlpOptions): SpawnYtDlpHandle {
   const backend = getYtDlpBackend()
   const ffmpegDir = resolveFfmpegDir()
-  const env = {
+  const env: NodeJS.ProcessEnv = {
     ...process.env,
     PYTHONIOENCODING: 'utf-8',
     PYTHONUTF8: '1'
@@ -48,9 +48,12 @@ export function spawnYtDlp({ args, onLine }: SpawnYtDlpOptions): SpawnYtDlpHandl
     env.PATH = `${ffmpegDir}${process.platform === 'win32' ? ';' : ':'}${env.PATH || ''}`
   }
 
+  const pluginDir = resolvePluginDir()
+  const pluginArgs = existsSync(pluginDir) ? ['--plugin-dirs', pluginDir] : []
+
   // yt-dlp options must come AFTER the backend prefix (e.g. `python -m yt_dlp`),
   // otherwise Python parses them itself and fails with "Unknown option"
-  const fullArgs = [...backend.prefixArgs, '--encoding', 'utf-8', ...args]
+  const fullArgs = [...backend.prefixArgs, '--encoding', 'utf-8', ...pluginArgs, ...args]
   let reason: 'pause' | 'cancel' | null = null
   const proc = spawn(backend.command, fullArgs, { env, windowsHide: true })
   let stdout = ''

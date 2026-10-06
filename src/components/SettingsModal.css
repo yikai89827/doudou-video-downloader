@@ -131,3 +131,115 @@
 .platform-tips strong {
   color: var(--text);
 }
+
+.settings-section > .hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+.login-notice {
+  padding: 9px 12px;
+  background: var(--bg-hover);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.login-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.login-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.login-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.login-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.login-note {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--warning);
+}
+
+.login-status {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.login-status.ok {
+  color: var(--success);
+  background: rgba(61, 214, 140, 0.14);
+}
+
+.login-status.off {
+  color: var(--text-muted);
+  background: var(--bg-hover);
+}
+
+.login-status.warn {
+  color: var(--warning);
+  background: rgba(255, 184, 77, 0.14);
+}
+
+.login-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.login-actions .btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.login-actions .btn.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.login-actions .btn.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.login-actions .btn.secondary {
+  background: var(--bg-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.login-actions .btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

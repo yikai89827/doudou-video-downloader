@@ -53,6 +53,11 @@
         "from": "resources/python-venv",
         "to": "python-venv",
         "filter": ["**/*"]
+      },
+      {
+        "from": "resources/plugins",
+        "to": "plugins",
+        "filter": ["**/*"]
       }
     ],
     "win": {

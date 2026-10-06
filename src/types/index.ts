@@ -70,6 +70,26 @@ export interface AppSettings {
   cookiesPath: string
 }
 
+export interface PlatformLoginState {
+  id: string
+  label: string
+  hasExtractor: boolean
+  requireLogin: boolean
+  note?: string
+  loginUrl: string
+  cookiesPath: string
+  cookieCount: number
+  loggedIn: boolean
+}
+
+export interface LoginResult {
+  ok: boolean
+  cookiesPath: string
+  cookieCount: number
+  cancelled: boolean
+  message?: string
+}
+
 export interface YtDlpBackendInfo {
   label: string
   hasImpersonate: boolean
@@ -91,6 +111,9 @@ export interface ElectronAPI {
   setCookiesPath: (path: string) => Promise<AppSettings>
   selectCookiesFile: () => Promise<string | null>
   getYtDlpBackend: () => Promise<YtDlpBackendInfo>
+  getLoginPlatforms: () => Promise<PlatformLoginState[]>
+  openLoginWindow: (platformId: string) => Promise<LoginResult>
+  clearLoginCookies: (platformId: string) => Promise<PlatformLoginState[]>
   onDownloadProgress: (callback: (progress: DownloadProgress) => void) => () => void
   onDownloadTasks: (callback: (tasks: DownloadTask[]) => void) => () => void
 }

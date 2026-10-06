@@ -5,7 +5,7 @@ import { BrowserWindow } from 'electron'
 import type { DownloadRecord, DownloadTask } from '../../src/types'
 import { recordStore } from './record-store'
 import { getDownloadsDir, getPlatformLabel } from './paths'
-import { buildYtDlpExtraArgs, getPlatformHint } from './ytdlp-args'
+import { buildYtDlpExtraArgs, getPlatformHint, looksLikeAuthFailure } from './ytdlp-args'
 import {
   DownloadCancelledError,
   DownloadPausedError,
@@ -13,6 +13,8 @@ import {
   runYtDlp,
   spawnYtDlp
 } from './ytdlp-runner'
+import { LoginPlatform, getPlatformByUrl, getUsableCookiesPath } from './platforms'
+import { openLoginWindow } from './login-window'
 
 type KillFn = (reason: 'pause' | 'cancel') => void
 
@@ -68,6 +70,8 @@ export class DownloadManager {
   private activeId: string | null = null
   private killActive: KillFn | null = null
   private win: BrowserWindow | null = null
+  /** 已触发过重新登录的任务，避免失败后无限弹登录窗口 */
+  private loginRetried = new Set<string>()
 
   setWindow(win: BrowserWindow | null): void {
     this.win = win
@@ -98,13 +102,12 @@ export class DownloadManager {
       const url = raw.trim()
       if (!url || !/^https?:\/\//i.test(url)) continue
 
-      const hint = getPlatformHint(url)
       const id = uuidv4()
       const task: DownloadTask = {
         id,
         url,
         title: '解析中...',
-        platform: '',
+        platform: getPlatformByUrl(url)?.label || '',
         duration: 0,
         thumbnail: '',
         status: 'queued',
@@ -115,6 +118,15 @@ export class DownloadManager {
       this.queue.push(id)
       ids.push(id)
 
+      // 需要登录的平台先走登录流程，拿到 Cookie 后再解析
+      const platform = getPlatformByUrl(url)
+      if (platform?.requireLogin && !getUsableCookiesPath(platform.id)) {
+        this.updateTask(id, { title: `等待登录 ${platform.label}...`, message: `请在登录窗口中完成 ${platform.label} 登录` })
+        void this.runLoginFlow(id, platform)
+        continue
+      }
+
+      const hint = getPlatformHint(url)
       if (hint) {
         this.updateTask(id, { status: 'failed', error: hint, title: '配置缺失' })
         this.removeFromQueue(id)
@@ -127,6 +139,57 @@ export class DownloadManager {
     this.sync()
     void this.processQueue()
     return ids
+  }
+
+  /**
+   * 打开内置登录窗口，成功后把任务重新放回队列。
+   * 登录期间任务会先移出队列，避免 processQueue 抢在没有 Cookie 时开跑。
+   */
+  async runLoginFlow(id: string, platform: LoginPlatform): Promise<void> {
+    this.removeFromQueue(id)
+    try {
+      const result = await openLoginWindow(platform)
+      const task = this.tasks.get(id)
+      if (!task) return
+
+      if (result.cancelled) {
+        this.updateTask(id, {
+          status: 'failed',
+          title: '需要登录',
+          message: undefined,
+          error: `已取消登录 ${platform.label}，无法继续下载`
+        })
+        this.removeFromQueue(id)
+        void this.processQueue()
+        return
+      }
+
+      if (!result.ok) {
+        this.updateTask(id, {
+          status: 'failed',
+          title: '需要登录',
+          message: undefined,
+          error: result.message || `未获取到 ${platform.label} 的登录状态，请重试`
+        })
+        this.removeFromQueue(id)
+        void this.processQueue()
+        return
+      }
+
+      this.updateTask(id, {
+        title: '解析中...',
+        message: `已获取 ${result.cookieCount} 条 ${platform.label} Cookie`,
+        error: undefined
+      })
+      // 解析成功后重新入队继续下载
+      this.queue.push(id)
+      void this.fetchTaskInfo(id)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      this.updateTask(id, { status: 'failed', title: '需要登录', message: undefined, error: message })
+      this.removeFromQueue(id)
+      void this.processQueue()
+    }
   }
 
   private async fetchTaskInfo(id: string): Promise<void> {
@@ -154,6 +217,16 @@ export class DownloadManager {
       })
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
+
+      // Cookie 失效：弹一次登录窗口，登录成功后自动重试
+      const platform = getPlatformByUrl(task.url)
+      if (platform?.requireLogin && looksLikeAuthFailure(message) && !this.loginRetried.has(id)) {
+        this.loginRetried.add(id)
+        this.updateTask(id, { message: `${platform.label} 登录已失效，正在重新登录...`, error: undefined })
+        void this.runLoginFlow(id, platform)
+        return
+      }
+
       this.updateTask(id, { status: 'failed', error: message, title: '获取信息失败' })
       this.removeFromQueue(id)
       void this.processQueue()
@@ -190,9 +263,11 @@ export class DownloadManager {
     void this.processQueue()
   }
 
+  /** 用户主动取消任务时清掉重试标记，避免下次又走一遍登录流程 */
   cancel(id: string): void {
     const task = this.tasks.get(id)
     if (!task) return
+    this.loginRetried.delete(id)
 
     if (this.activeId === id && this.killActive) {
       this.killActive('cancel')
@@ -343,6 +418,17 @@ export class DownloadManager {
       }
 
       const message = err instanceof Error ? err.message : String(err)
+
+      const platform = getPlatformByUrl(task.url)
+      if (platform?.requireLogin && looksLikeAuthFailure(message) && !this.loginRetried.has(id)) {
+        this.loginRetried.add(id)
+        this.updateTask(id, { status: 'queued', error: undefined, message: `${platform.label} 登录已失效，正在重新登录...` })
+        recordStore.update(id, { status: 'paused', error: undefined })
+        if (!this.queue.includes(id)) this.queue.push(id)
+        void this.runLoginFlow(id, platform)
+        return
+      }
+
       this.updateTask(id, { status: 'failed', error: message, message })
       recordStore.update(id, { status: 'failed', error: message })
       emitProgress(this.win, id, { status: 'failed', message })

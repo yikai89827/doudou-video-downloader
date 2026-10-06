@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { DownloadProgress, DownloadTask, ElectronAPI, RecordQuery } from '../src/types'
+import type { DownloadProgress, DownloadTask, ElectronAPI } from '../src/types'
 
 const api: ElectronAPI = {
   getRecords: (query) => ipcRenderer.invoke('records:get', query),
@@ -17,6 +17,9 @@ const api: ElectronAPI = {
   setCookiesPath: (path) => ipcRenderer.invoke('settings:set-cookies', path),
   selectCookiesFile: () => ipcRenderer.invoke('settings:select-cookies'),
   getYtDlpBackend: () => ipcRenderer.invoke('ytdlp:backend'),
+  getLoginPlatforms: () => ipcRenderer.invoke('login:platforms'),
+  openLoginWindow: (platformId) => ipcRenderer.invoke('login:open', platformId),
+  clearLoginCookies: (platformId) => ipcRenderer.invoke('login:clear', platformId),
   onDownloadProgress: (callback) => {
     const handler = (_: unknown, progress: DownloadProgress) => callback(progress)
     ipcRenderer.on('download-progress', handler)

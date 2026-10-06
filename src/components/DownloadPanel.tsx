@@ -53,7 +53,7 @@ export default function DownloadPanel({ onEnqueued }: Props) {
   return (
     <section className="download-panel">
       <h2>新建下载</h2>
-      <p className="hint">支持批量下载，每行一个链接，或用逗号/空格分隔</p>
+      <p className="hint">支持批量下载，每行一个链接</p>
 
       <textarea
         className="url-textarea"
